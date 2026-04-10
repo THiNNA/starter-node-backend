@@ -397,3 +397,233 @@ RateLimit-Limit: 100
 RateLimit-Remaining: 95
 RateLimit-Reset: 1705312200
 ```
+
+---
+
+## Products (Example CRUD)
+
+All product endpoints require authentication via Bearer token.
+
+### `POST /api/v1/products`
+
+Create a new product.
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+```
+
+**Request Body:**
+```json
+{
+  "name": "Widget Pro",
+  "description": "A premium widget",
+  "price": 29.99,
+  "stock": 100
+}
+```
+
+**Validation:**
+- `name` — required, 1-200 characters
+- `description` — optional, max 5000 characters
+- `price` — required, non-negative number
+- `stock` — optional, non-negative integer (default: 0)
+
+**Success Response (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Widget Pro",
+    "description": "A premium widget",
+    "price": 29.99,
+    "stock": 100,
+    "isActive": true,
+    "createdBy": "user-uuid",
+    "updatedBy": null,
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "updatedAt": "2024-01-15T10:30:00.000Z"
+  },
+  "message": "Product created"
+}
+```
+
+**Error Responses:**
+| Status | Condition                      |
+|--------|--------------------------------|
+| 400    | Validation failed              |
+| 401    | Access token missing/invalid   |
+
+---
+
+### `GET /api/v1/products`
+
+Get a paginated list of products with optional search.
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+```
+
+**Query Parameters:**
+| Param  | Type   | Default | Description                    |
+|--------|--------|---------|--------------------------------|
+| page   | number | 1       | Page number (positive integer) |
+| limit  | number | 10      | Items per page (1-100)         |
+| search | string | —       | Search in name and description |
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "Widget Pro",
+      "description": "A premium widget",
+      "price": 29.99,
+      "stock": 100,
+      "isActive": true,
+      "createdBy": "user-uuid",
+      "updatedBy": null,
+      "createdAt": "2024-01-15T10:30:00.000Z",
+      "updatedAt": "2024-01-15T10:30:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 42,
+    "totalPages": 5
+  }
+}
+```
+
+---
+
+### `GET /api/v1/products/:id`
+
+Get a single product by ID.
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+```
+
+**Path Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| id    | UUID | Product ID  |
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Widget Pro",
+    "description": "A premium widget",
+    "price": 29.99,
+    "stock": 100,
+    "isActive": true,
+    "createdBy": "user-uuid",
+    "updatedBy": null,
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "updatedAt": "2024-01-15T10:30:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+| Status | Condition                      |
+|--------|--------------------------------|
+| 400    | Invalid UUID format            |
+| 401    | Access token missing/invalid   |
+| 404    | Product not found              |
+
+---
+
+### `PUT /api/v1/products/:id`
+
+Update an existing product. Only provided fields are updated.
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+```
+
+**Path Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| id    | UUID | Product ID  |
+
+**Request Body (all fields optional):**
+```json
+{
+  "name": "Widget Pro v2",
+  "description": "Updated description",
+  "price": 39.99,
+  "stock": 50,
+  "isActive": false
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Widget Pro v2",
+    "description": "Updated description",
+    "price": 39.99,
+    "stock": 50,
+    "isActive": false,
+    "createdBy": "user-uuid",
+    "updatedBy": "updater-uuid",
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "updatedAt": "2024-01-16T08:00:00.000Z"
+  },
+  "message": "Product updated"
+}
+```
+
+**Error Responses:**
+| Status | Condition                      |
+|--------|--------------------------------|
+| 400    | Validation failed / invalid ID |
+| 401    | Access token missing/invalid   |
+| 404    | Product not found              |
+
+---
+
+### `DELETE /api/v1/products/:id`
+
+Delete a product.
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+```
+
+**Path Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| id    | UUID | Product ID  |
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": null,
+  "message": "Product deleted"
+}
+```
+
+**Error Responses:**
+| Status | Condition                      |
+|--------|--------------------------------|
+| 400    | Invalid UUID format            |
+| 401    | Access token missing/invalid   |
+| 404    | Product not found              |

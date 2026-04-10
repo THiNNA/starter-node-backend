@@ -27,13 +27,13 @@ This is a production-ready Node.js backend starter template built with **Express
                                ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Router (/api/v1)                         │
-│  ┌──────────┐  ┌──────────────┐  ┌───────────────────────────┐ │
-│  │ /health  │  │ /auth        │  │ /users                    │ │
-│  │          │  │  ├ register  │  │  ├ GET / (auth)           │ │
-│  │          │  │  ├ login     │  │  ├ GET /:id (auth)        │ │
-│  │          │  │  ├ refresh   │  │  └ GET /admin/all (admin) │ │
-│  │          │  │  └ logout    │  │                           │ │
-│  └──────────┘  └──────────────┘  └───────────────────────────┘ │
+│  ┌──────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────┐ │
+│  │ /health  │  │ /auth        │  │ /users       │  │/products│ │
+│  │          │  │  ├ register  │  │  ├ GET /      │  │ CRUD    │ │
+│  │          │  │  ├ login     │  │  ├ GET /:id   │  │ (auth)  │ │
+│  │          │  │  ├ refresh   │  │  └ GET /admin │  │         │ │
+│  │          │  │  └ logout    │  │              │  │         │ │
+│  └──────────┘  └──────────────┘  └──────────────┘  └─────────┘ │
 └──────────────────────────────┬──────────────────────────────────┘
                                │
          ┌─────────────────────┼─────────────────────┐
@@ -128,6 +128,15 @@ src/
 │       ├── user.route.ts           # User route definitions
 │       └── user.types.ts           # User TypeScript interfaces
 │
+│   └── product/
+│       ├── index.ts                # Re-exports product router
+│       ├── product.controller.ts   # HTTP handlers (CRUD)
+│       ├── product.service.ts      # Product business logic
+│       ├── product.repository.ts   # Product data access
+│       ├── product.validation.ts   # Zod schemas for product endpoints
+│       ├── product.route.ts        # Product route definitions
+│       └── product.types.ts        # Product TypeScript interfaces
+│
 ├── routes/
 │   └── index.ts                    # Route aggregator (health + modules)
 │
@@ -146,8 +155,9 @@ src/
     └── index.ts                    # Shared library utilities (placeholder)
 
 prisma/
-└── schema.prisma                   # Database schema (User, RefreshToken models)
+└── schema.prisma                   # Database schema (AppConfig, User, RefreshToken, Product)
 
+agent.md                            # AI agent guide for code generation
 Dockerfile                          # Multi-stage Docker build
 docker-compose.yml                  # App + MySQL services
 .env.example                        # Environment variable template
@@ -283,19 +293,36 @@ All column names use **snake_case** with `_id` suffix for identifiers.
 | created_at  | DateTime | Auto-generated timestamp        |
 | updated_at  | DateTime | Auto-updated timestamp          |
 
+### Product Model (`m_products`)
+
+| Column      | Type        | Description                       |
+|-------------|-------------|-----------------------------------|
+| product_id  | UUID        | Primary key (auto-generated)      |
+| name        | VarChar(200)| Product name                      |
+| description | Text        | Optional product description      |
+| price       | Decimal(12,2)| Product price                    |
+| stock       | Int         | Stock quantity (default: 0)       |
+| is_active   | Boolean     | Active flag (default: true)       |
+| created_by  | UUID        | FK to m_users.user_id (creator)   |
+| updated_by  | UUID?       | FK to m_users.user_id (updater)   |
+| created_at  | DateTime    | Auto-generated timestamp          |
+| updated_at  | DateTime    | Auto-updated timestamp            |
+
 ### Entity Relationship
 
 ```
 m_users (1) ──── (N) t_refresh_tokens
+m_users (1) ──── (N) m_products (created_by)
+m_users (1) ──── (N) m_products (updated_by)
 ```
 
-A user can have multiple active refresh tokens (e.g., logged in on multiple devices). Deleting a user cascades to delete all their refresh tokens.
+A user can have multiple active refresh tokens (e.g., logged in on multiple devices). Deleting a user cascades to delete all their refresh tokens. Products track which user created and last updated them.
 
 ---
 
 ## Database-Driven Configuration
 
-All runtime configuration values are stored in the `app_configs` table and loaded into an in-memory cache at startup. This allows changing system behavior (e.g., rate limits, token expiry, salt rounds) without redeploying — just update the DB row and restart (or call reload).
+All runtime configuration values are stored in the `sys_configs` table and loaded into an in-memory cache at startup. This allows changing system behavior (e.g., rate limits, token expiry, salt rounds) without redeploying — just update the DB row and restart (or call reload).
 
 ### How It Works
 
