@@ -77,13 +77,14 @@ const fooService = new FooService(new FooRepository());
 export const createFoo = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const authReq = req as AuthenticatedRequest;
   const result = await fooService.create(req.body, authReq.user!.userId);
-  sendSuccess(res, result, { model: 'foo', method: 'createFoo' }, 201);
+  sendSuccess(res, result, 201);
 });
 ```
 
 **Rules:**
 - Always wrap handlers with `asyncHandler` (catches errors automatically)
-- Use `sendSuccess(res, data, { model, method }, statusCode?)` or `sendPaginated(res, data[], pagination, { model, method })`
+- Use `sendSuccess(res, data, statusCode?)` or `sendPaginated(res, data[], pagination)`
+- The `responseWrapper` middleware automatically wraps all JSON responses in `{ head, body }` format — controllers do **not** need to set `model` or `method`
 - Access authenticated user via `(req as AuthenticatedRequest).user!`
 - Controller is thin — **no business logic here**
 
@@ -274,14 +275,16 @@ model Foo {
 
 ## API Response Format
 
-All responses use a `head`/`body` structure.
+All responses are automatically wrapped in a `head`/`body` structure by the `responseWrapper` middleware. Controllers just send plain data — the middleware handles:
+- `model` — extracted from the route module (e.g. `auth`, `users`, `products`)
+- `method` — extracted from the route action (e.g. `login`, `register`) or HTTP method for RESTful routes (e.g. `list`, `detail`, `create`, `update`, `delete`)
 
 ### Success
 ```json
 {
   "head": {
     "model": "foo",
-    "method": "createFoo",
+    "method": "create",
     "errorcode": "0",
     "errorflag": "N",
     "errordesc": ""
@@ -295,7 +298,7 @@ All responses use a `head`/`body` structure.
 {
   "head": {
     "model": "foo",
-    "method": "getFoos",
+    "method": "list",
     "errorcode": "0",
     "errorflag": "N",
     "errordesc": ""
@@ -317,7 +320,7 @@ All responses use a `head`/`body` structure.
 {
   "head": {
     "model": "foo",
-    "method": "createFoo",
+    "method": "create",
     "errorcode": "400",
     "errorflag": "Y",
     "errordesc": "Validation failed"
@@ -329,9 +332,10 @@ All responses use a `head`/`body` structure.
 ```
 
 Use:
-- `sendSuccess(res, data, { model, method }, statusCode?)` — default 200
-- `sendPaginated(res, data[], { page, limit, total }, { model, method })`
+- `sendSuccess(res, data, statusCode?)` — default 200
+- `sendPaginated(res, data[], { page, limit, total })`
 - Throw errors to let `errorHandler` middleware format the response
+- **Do NOT manually build head/body** — the middleware does it automatically
 
 ---
 

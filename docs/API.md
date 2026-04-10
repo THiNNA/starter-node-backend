@@ -2,7 +2,10 @@
 
 Base URL: `http://localhost:3000/api/v1`
 
-All responses follow a standard format with `head` and `body`:
+All responses follow a standard format with `head` and `body`, automatically applied by the `responseWrapper` middleware:
+
+- `model` is extracted from the API route module (e.g., `auth`, `users`, `products`)
+- `method` is extracted from the route action (e.g., `login`, `register`) or derived from the HTTP method for RESTful routes (`list`, `detail`, `create`, `update`, `delete`)
 
 ```json
 // Success
@@ -46,8 +49,8 @@ All responses follow a standard format with `head` and `body`:
 // Paginated
 {
   "head": {
-    "model": "user",
-    "method": "getUsers",
+    "model": "users",
+    "method": "list",
     "errorcode": "0",
     "errorflag": "N",
     "errordesc": ""
@@ -87,7 +90,7 @@ Returns server health status. Not rate-limited. Not logged.
 {
   "head": {
     "model": "health",
-    "method": "check",
+    "method": "health",
     "errorcode": "0",
     "errorflag": "N",
     "errordesc": ""
@@ -299,8 +302,8 @@ Authorization: Bearer <accessToken>
 ```json
 {
   "head": {
-    "model": "user",
-    "method": "getUsers",
+    "model": "users",
+    "method": "list",
     "errorcode": "0",
     "errorflag": "N",
     "errordesc": ""
@@ -352,8 +355,8 @@ Authorization: Bearer <accessToken>
 ```json
 {
   "head": {
-    "model": "user",
-    "method": "getUserById",
+    "model": "users",
+    "method": "detail",
     "errorcode": "0",
     "errorflag": "N",
     "errordesc": ""
@@ -515,8 +518,8 @@ Authorization: Bearer <accessToken>
 ```json
 {
   "head": {
-    "model": "product",
-    "method": "createProduct",
+    "model": "products",
+    "method": "create",
     "errorcode": "0",
     "errorflag": "N",
     "errordesc": ""
@@ -564,8 +567,8 @@ Authorization: Bearer <accessToken>
 ```json
 {
   "head": {
-    "model": "product",
-    "method": "getProducts",
+    "model": "products",
+    "method": "list",
     "errorcode": "0",
     "errorflag": "N",
     "errordesc": ""
@@ -615,8 +618,8 @@ Authorization: Bearer <accessToken>
 ```json
 {
   "head": {
-    "model": "product",
-    "method": "getProductById",
+    "model": "products",
+    "method": "detail",
     "errorcode": "0",
     "errorflag": "N",
     "errordesc": ""
@@ -674,8 +677,8 @@ Authorization: Bearer <accessToken>
 ```json
 {
   "head": {
-    "model": "product",
-    "method": "updateProduct",
+    "model": "products",
+    "method": "update",
     "errorcode": "0",
     "errorflag": "N",
     "errordesc": ""
@@ -722,8 +725,8 @@ Authorization: Bearer <accessToken>
 ```json
 {
   "head": {
-    "model": "product",
-    "method": "deleteProduct",
+    "model": "products",
+    "method": "delete",
     "errorcode": "0",
     "errorflag": "N",
     "errordesc": ""
