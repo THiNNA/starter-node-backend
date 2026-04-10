@@ -2,6 +2,11 @@
 
 Production-ready Node.js backend starter template with Express, TypeScript, Prisma ORM, JWT authentication, and Docker.
 
+## 📖 Documentation
+
+- **[Architecture & System Design](docs/ARCHITECTURE.md)** — System structure, data flow, security design, and logging
+- **[API Reference](docs/API.md)** — Complete endpoint documentation with request/response examples
+
 ## Tech Stack
 
 - **Runtime:** Node.js + TypeScript (strict mode)
@@ -18,10 +23,11 @@ Production-ready Node.js backend starter template with Express, TypeScript, Pris
 ```
 src/
 ├── app.ts                         # Express app setup
-├── server.ts                      # Entry point + graceful shutdown
+├── server.ts                      # Entry point + graceful shutdown + token cleanup
 ├── config/
-│   ├── env.ts                     # Environment configuration
-│   └── logger.ts                  # Pino logger configuration
+│   ├── env.ts                     # Environment configuration (validates in production)
+│   ├── logger.ts                  # Pino logger configuration
+│   └── database.ts                # Database configuration
 ├── constants/                     # App constants
 ├── core/
 │   ├── asyncHandler.ts            # Express async wrapper
@@ -57,6 +63,10 @@ src/
 ├── types/                         # Shared TypeScript types
 ├── utils/                         # JWT & password utilities
 └── libs/                          # Shared libraries
+
+docs/
+├── ARCHITECTURE.md                # System architecture documentation
+└── API.md                         # API endpoint documentation
 
 prisma/
 └── schema.prisma                  # Database schema
@@ -125,24 +135,29 @@ npm run dev
 
 ## Environment Variables
 
-| Variable             | Default       | Description              |
-|----------------------|---------------|--------------------------|
-| `PORT`               | `3000`        | Server port              |
-| `NODE_ENV`           | `development` | Environment mode         |
-| `DATABASE_URL`       | —             | MySQL connection string  |
-| `JWT_ACCESS_SECRET`  | —             | JWT access token secret  |
-| `JWT_REFRESH_SECRET` | —             | JWT refresh token secret |
+| Variable             | Default       | Required in Prod | Description              |
+|----------------------|---------------|------------------|--------------------------|
+| `PORT`               | `3000`        | No               | Server port              |
+| `NODE_ENV`           | `development` | Yes              | Environment mode         |
+| `DATABASE_URL`       | —             | **Yes**          | MySQL connection string  |
+| `JWT_ACCESS_SECRET`  | —             | **Yes**          | JWT access token secret  |
+| `JWT_REFRESH_SECRET` | —             | **Yes**          | JWT refresh token secret |
+| `CORS_ORIGIN`        | `*`           | Recommended      | Allowed origins (comma-separated) |
+| `MYSQL_ROOT_PASSWORD`| `password`    | **Yes** (Docker) | MySQL root password      |
+| `MYSQL_DATABASE`     | `starter_db`  | No               | MySQL database name      |
+
+> ⚠️ In production mode, `DATABASE_URL`, `JWT_ACCESS_SECRET`, and `JWT_REFRESH_SECRET` are **required**. The server will fail to start without them.
 
 ## API Endpoints
 
 ### Auth
 
-| Method | Path                     | Description       | Auth |
-|--------|--------------------------|-------------------|------|
-| POST   | `/api/v1/auth/register`  | Register user     | No   |
-| POST   | `/api/v1/auth/login`     | Login             | No   |
-| POST   | `/api/v1/auth/refresh`   | Refresh tokens    | No   |
-| POST   | `/api/v1/auth/logout`    | Logout            | No   |
+| Method | Path                     | Description       | Auth    |
+|--------|--------------------------|-------------------|---------|
+| POST   | `/api/v1/auth/register`  | Register user     | No      |
+| POST   | `/api/v1/auth/login`     | Login             | No      |
+| POST   | `/api/v1/auth/refresh`   | Refresh tokens    | No      |
+| POST   | `/api/v1/auth/logout`    | Logout            | Bearer  |
 
 ### Users
 
@@ -163,5 +178,10 @@ npm run dev
 - **MVC + Service + Repository pattern** — clean separation of concerns
 - **Repository pattern** — abstracts Prisma from business logic
 - **Refresh token rotation** — secure token management with reuse detection
+- **Automatic token cleanup** — expired refresh tokens cleaned hourly
 - **Centralized error handling** — custom error classes with consistent responses
+- **Environment validation** — required secrets enforced at startup in production
+- **Request tracing** — UUID-based X-Request-Id on every request
 - **Modular structure** — each feature is self-contained
+
+See [Architecture Documentation](docs/ARCHITECTURE.md) for detailed system design.
