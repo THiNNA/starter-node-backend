@@ -240,32 +240,53 @@ Unhandled errors return a generic 500 response. Stack traces are only included i
 
 ## Database Schema
 
-### User Model
+### Table Naming Convention
 
-| Field     | Type     | Description                     |
-|-----------|----------|---------------------------------|
-| id        | UUID     | Primary key (auto-generated)    |
-| email     | String   | Unique email address            |
-| password  | String   | bcrypt hashed password          |
-| role      | Enum     | USER or ADMIN (default: USER)   |
-| isActive  | Boolean  | Account active flag (default: true) |
-| createdAt | DateTime | Auto-generated timestamp        |
-| updatedAt | DateTime | Auto-updated timestamp          |
+| Prefix | Purpose                          | Example          |
+|--------|----------------------------------|------------------|
+| `m_`   | Master data                      | `m_users`        |
+| `t_`   | Transaction data                 | `t_refresh_tokens` |
+| `sys_` | System configuration             | `sys_configs`    |
+| `log_` | Log / audit data                 | `log_*` (future) |
 
-### RefreshToken Model
+All column names use **snake_case** with `_id` suffix for identifiers.
 
-| Field     | Type     | Description                     |
-|-----------|----------|---------------------------------|
-| id        | UUID     | Primary key (auto-generated)    |
-| token     | String   | JWT refresh token (unique, max 500 chars) |
-| userId    | UUID     | Foreign key to User (cascade delete) |
-| expiresAt | DateTime | Token expiration time           |
-| createdAt | DateTime | Auto-generated timestamp        |
+### User Model (`m_users`)
+
+| Column      | Type     | Description                     |
+|-------------|----------|---------------------------------|
+| user_id     | UUID     | Primary key (auto-generated)    |
+| email       | String   | Unique email address            |
+| password    | String   | bcrypt hashed password          |
+| role        | Enum     | USER or ADMIN (default: USER)   |
+| is_active   | Boolean  | Account active flag (default: true) |
+| created_at  | DateTime | Auto-generated timestamp        |
+| updated_at  | DateTime | Auto-updated timestamp          |
+
+### RefreshToken Model (`t_refresh_tokens`)
+
+| Column      | Type     | Description                     |
+|-------------|----------|---------------------------------|
+| token_id    | UUID     | Primary key (auto-generated)    |
+| token       | String   | JWT refresh token (unique, max 500 chars) |
+| user_id     | UUID     | Foreign key to m_users (cascade delete) |
+| expires_at  | DateTime | Token expiration time           |
+| created_at  | DateTime | Auto-generated timestamp        |
+
+### AppConfig Model (`sys_configs`)
+
+| Column      | Type     | Description                     |
+|-------------|----------|---------------------------------|
+| config_key  | String   | Primary key (max 100 chars)     |
+| value       | String   | Config value (max 500 chars)    |
+| description | String?  | Optional description (max 255)  |
+| created_at  | DateTime | Auto-generated timestamp        |
+| updated_at  | DateTime | Auto-updated timestamp          |
 
 ### Entity Relationship
 
 ```
-User (1) ──── (N) RefreshToken
+m_users (1) ──── (N) t_refresh_tokens
 ```
 
 A user can have multiple active refresh tokens (e.g., logged in on multiple devices). Deleting a user cascades to delete all their refresh tokens.
@@ -329,7 +350,7 @@ Server Start
 Update a value directly in the database:
 
 ```sql
-UPDATE app_configs SET value = '30m' WHERE `key` = 'jwt.accessExpiresIn';
+UPDATE sys_configs SET value = '30m' WHERE config_key = 'jwt.accessExpiresIn';
 ```
 
 Or via the `AppConfigService`:
@@ -339,19 +360,6 @@ await appConfigService.set('jwt.accessExpiresIn', '30m');
 ```
 
 Some changes (e.g., rate limits) require calling `appConfigService.reload()` and `refreshRateLimiters()` to take effect without restart.
-
-### Database Schema
-
-```prisma
-model AppConfig {
-  key         String   @id @db.VarChar(100)
-  value       String   @db.VarChar(500)
-  description String?  @db.VarChar(255)
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  @@map("app_configs")
-}
-```
 
 ---
 

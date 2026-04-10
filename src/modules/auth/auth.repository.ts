@@ -4,8 +4,8 @@ import { RefreshToken, User } from '@prisma/client';
 export class AuthRepository {
   async createRefreshToken(data: {
     token: string;
-    userId: string;
-    expiresAt: Date;
+    user_id: string;
+    expires_at: Date;
   }): Promise<RefreshToken> {
     return prisma.refreshToken.create({ data });
   }
@@ -22,12 +22,12 @@ export class AuthRepository {
   }
 
   async deleteUserRefreshTokens(userId: string): Promise<void> {
-    await prisma.refreshToken.deleteMany({ where: { userId } });
+    await prisma.refreshToken.deleteMany({ where: { user_id: userId } });
   }
 
   async deleteExpiredTokens(): Promise<void> {
     await prisma.refreshToken.deleteMany({
-      where: { expiresAt: { lt: new Date() } },
+      where: { expires_at: { lt: new Date() } },
     });
   }
 }

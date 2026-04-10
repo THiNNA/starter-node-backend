@@ -7,7 +7,7 @@ export class UserRepository {
   }
 
   async findById(id: string): Promise<User | null> {
-    return prisma.user.findUnique({ where: { id } });
+    return prisma.user.findUnique({ where: { user_id: id } });
   }
 
   async findByEmail(email: string): Promise<User | null> {
@@ -18,7 +18,7 @@ export class UserRepository {
     return prisma.user.findMany({
       skip: params.skip,
       take: params.take,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
     });
   }
 

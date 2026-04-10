@@ -8,12 +8,12 @@ export class UserService {
 
   private toResponse(user: User): UserResponse {
     return {
-      id: user.id,
+      id: user.user_id,
       email: user.email,
       role: user.role,
-      isActive: user.isActive,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
+      isActive: user.is_active,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
     };
   }
 

@@ -54,7 +54,7 @@ export class AppConfigService {
     const configs = await this.repository.findAll();
     configCache.clear();
     for (const c of configs) {
-      configCache.set(c.key, c.value);
+      configCache.set(c.config_key, c.value);
     }
     logger.info(`Loaded ${configs.length} app configs from database`);
   }

@@ -11,7 +11,7 @@ const startTokenCleanup = (): void => {
   cleanupTimer = setInterval(async () => {
     try {
       const result = await prisma.refreshToken.deleteMany({
-        where: { expiresAt: { lt: new Date() } },
+        where: { expires_at: { lt: new Date() } },
       });
       if (result.count > 0) {
         logger.info(`Cleaned up ${result.count} expired refresh tokens`);

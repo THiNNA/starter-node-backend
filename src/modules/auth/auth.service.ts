@@ -31,7 +31,7 @@ export class AuthService {
     });
 
     const tokenPayload: TokenPayload = {
-      userId: user.id,
+      userId: user.user_id,
       email: user.email,
       role: user.role,
     };
@@ -39,14 +39,14 @@ export class AuthService {
     const accessToken = generateAccessToken(tokenPayload);
     const refreshToken = generateRefreshToken(tokenPayload);
 
-    await this.storeRefreshToken(refreshToken, user.id);
+    await this.storeRefreshToken(refreshToken, user.user_id);
 
     return { accessToken, refreshToken };
   }
 
   async login(input: LoginInput): Promise<AuthTokens> {
     const user = await this.userRepository.findByEmail(input.email);
-    if (!user || !user.isActive) {
+    if (!user || !user.is_active) {
       throw new AuthError('Invalid email or password');
     }
 
@@ -56,7 +56,7 @@ export class AuthService {
     }
 
     const tokenPayload: TokenPayload = {
-      userId: user.id,
+      userId: user.user_id,
       email: user.email,
       role: user.role,
     };
@@ -64,7 +64,7 @@ export class AuthService {
     const accessToken = generateAccessToken(tokenPayload);
     const refreshToken = generateRefreshToken(tokenPayload);
 
-    await this.storeRefreshToken(refreshToken, user.id);
+    await this.storeRefreshToken(refreshToken, user.user_id);
 
     return { accessToken, refreshToken };
   }
@@ -84,7 +84,7 @@ export class AuthService {
       throw new AuthError('Refresh token reuse detected');
     }
 
-    if (storedToken.expiresAt < new Date()) {
+    if (storedToken.expires_at < new Date()) {
       await this.authRepository.deleteRefreshToken(oldRefreshToken);
       throw new AuthError('Refresh token expired');
     }
@@ -93,7 +93,7 @@ export class AuthService {
     await this.authRepository.deleteRefreshToken(oldRefreshToken);
 
     const tokenPayload: TokenPayload = {
-      userId: storedToken.user.id,
+      userId: storedToken.user.user_id,
       email: storedToken.user.email,
       role: storedToken.user.role,
     };
@@ -101,7 +101,7 @@ export class AuthService {
     const accessToken = generateAccessToken(tokenPayload);
     const refreshToken = generateRefreshToken(tokenPayload);
 
-    await this.storeRefreshToken(refreshToken, storedToken.user.id);
+    await this.storeRefreshToken(refreshToken, storedToken.user.user_id);
 
     return { accessToken, refreshToken };
   }
@@ -117,8 +117,8 @@ export class AuthService {
 
     await this.authRepository.createRefreshToken({
       token,
-      userId,
-      expiresAt,
+      user_id: userId,
+      expires_at: expiresAt,
     });
   }
 }
