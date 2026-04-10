@@ -235,11 +235,18 @@ Error (built-in)
 
 ```json
 {
-  "success": false,
-  "message": "Validation failed",
-  "errors": {
-    "email": ["Invalid email address"],
-    "password": ["Password must be at least 8 characters"]
+  "head": {
+    "model": "auth",
+    "method": "register",
+    "errorcode": "400",
+    "errorflag": "Y",
+    "errordesc": "Validation failed"
+  },
+  "body": {
+    "errors": {
+      "email": ["Invalid email address"],
+      "password": ["Password must be at least 8 characters"]
+    }
   }
 }
 ```

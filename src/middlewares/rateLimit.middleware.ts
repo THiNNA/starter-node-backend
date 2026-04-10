@@ -8,8 +8,14 @@ export function createRateLimiter() {
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: {
-      success: false,
-      message: 'Too many requests, please try again later.',
+      head: {
+        model: 'system',
+        method: 'rateLimit',
+        errorcode: '429',
+        errorflag: 'Y',
+        errordesc: 'Too many requests, please try again later.',
+      },
+      body: null,
     },
   });
 }
@@ -21,8 +27,14 @@ export function createAuthRateLimiter() {
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: {
-      success: false,
-      message: 'Too many authentication attempts, please try again later.',
+      head: {
+        model: 'auth',
+        method: 'rateLimit',
+        errorcode: '429',
+        errorflag: 'Y',
+        errordesc: 'Too many authentication attempts, please try again later.',
+      },
+      body: null,
     },
   });
 }

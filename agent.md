@@ -77,13 +77,13 @@ const fooService = new FooService(new FooRepository());
 export const createFoo = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const authReq = req as AuthenticatedRequest;
   const result = await fooService.create(req.body, authReq.user!.userId);
-  sendSuccess(res, result, 'Foo created', 201);
+  sendSuccess(res, result, { model: 'foo', method: 'createFoo' }, 201);
 });
 ```
 
 **Rules:**
 - Always wrap handlers with `asyncHandler` (catches errors automatically)
-- Use `sendSuccess(res, data, message?, statusCode?)` or `sendPaginated(res, data[], pagination)`
+- Use `sendSuccess(res, data, { model, method }, statusCode?)` or `sendPaginated(res, data[], pagination, { model, method })`
 - Access authenticated user via `(req as AuthenticatedRequest).user!`
 - Controller is thin — **no business logic here**
 
@@ -274,25 +274,40 @@ model Foo {
 
 ## API Response Format
 
+All responses use a `head`/`body` structure.
+
 ### Success
 ```json
 {
-  "success": true,
-  "data": { ... },
-  "message": "Optional message"
+  "head": {
+    "model": "foo",
+    "method": "createFoo",
+    "errorcode": "0",
+    "errorflag": "N",
+    "errordesc": ""
+  },
+  "body": { ... }
 }
 ```
 
 ### Paginated
 ```json
 {
-  "success": true,
-  "data": [ ... ],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 42,
-    "totalPages": 5
+  "head": {
+    "model": "foo",
+    "method": "getFoos",
+    "errorcode": "0",
+    "errorflag": "N",
+    "errordesc": ""
+  },
+  "body": {
+    "items": [ ... ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 42,
+      "totalPages": 5
+    }
   }
 }
 ```
@@ -300,15 +315,22 @@ model Foo {
 ### Error
 ```json
 {
-  "success": false,
-  "message": "Error description",
-  "errors": { "field": ["error1"] }
+  "head": {
+    "model": "foo",
+    "method": "createFoo",
+    "errorcode": "400",
+    "errorflag": "Y",
+    "errordesc": "Validation failed"
+  },
+  "body": {
+    "errors": { "field": ["error1"] }
+  }
 }
 ```
 
 Use:
-- `sendSuccess(res, data, message?, statusCode?)` — default 200
-- `sendPaginated(res, data[], { page, limit, total })`
+- `sendSuccess(res, data, { model, method }, statusCode?)` — default 200
+- `sendPaginated(res, data[], { page, limit, total }, { model, method })`
 - Throw errors to let `errorHandler` middleware format the response
 
 ---
