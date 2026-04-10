@@ -66,7 +66,7 @@ function extractFromUrl(url: string): { model: string; method: string } {
   const path = url.split('?')[0].replace(prefixPattern, '');
   const segments = path.split('/').filter(Boolean);
   const model = segments[0] || 'unknown';
-  const method = segments[1] || segments[0] || 'unknown';
+  const method = segments[1] || 'unknown';
   return { model, method };
 }
 
@@ -110,8 +110,8 @@ export const responseWrapper = (_req: Request, res: Response, next: NextFunction
       const errordesc = typeof dataObj.message === 'string' ? dataObj.message : '';
 
       // Build the body without the `message` field (it goes into head.errordesc)
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { message: _msg, ...rest } = dataObj;
+      const { message, ...rest } = dataObj;
+      void message; // extracted to keep it out of `rest`
       const body = Object.keys(rest).length > 0 ? rest : null;
 
       return originalJson({
