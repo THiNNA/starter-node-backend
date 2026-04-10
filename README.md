@@ -177,8 +177,9 @@ npm run dev
 
 - **MVC + Service + Repository pattern** — clean separation of concerns
 - **Repository pattern** — abstracts Prisma from business logic
+- **Database-driven configuration** — all runtime configs (JWT expiry, rate limits, salt rounds, etc.) stored in `app_configs` table, changeable without redeployment
 - **Refresh token rotation** — secure token management with reuse detection
-- **Automatic token cleanup** — expired refresh tokens cleaned hourly
+- **Automatic token cleanup** — expired refresh tokens cleaned at DB-configurable intervals
 - **Centralized error handling** — custom error classes with consistent responses
 - **Environment validation** — required secrets enforced at startup in production
 - **Request tracing** — UUID-based X-Request-Id on every request

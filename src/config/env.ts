@@ -24,8 +24,6 @@ const env = {
     refreshSecret: isProduction
       ? requireEnv('JWT_REFRESH_SECRET')
       : (process.env.JWT_REFRESH_SECRET ?? 'dev-refresh-secret'),
-    accessExpiresIn: '15m',
-    refreshExpiresIn: '7d',
   },
   cors: {
     origin: process.env.CORS_ORIGIN ?? '*',

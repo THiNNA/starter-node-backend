@@ -7,6 +7,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model AppConfig {
+  key         String   @id @db.VarChar(100)
+  value       String   @db.VarChar(500)
+  description String?  @db.VarChar(255)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("app_configs")
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique

@@ -1,9 +1,9 @@
 import bcrypt from 'bcrypt';
-
-const SALT_ROUNDS = 12;
+import { appConfigService, CONFIG_KEYS } from '../modules/app-config';
 
 export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, SALT_ROUNDS);
+  const saltRounds = appConfigService.getNumber(CONFIG_KEYS.BCRYPT_SALT_ROUNDS);
+  return bcrypt.hash(password, saltRounds);
 }
 
 export async function comparePassword(password: string, hash: string): Promise<boolean> {

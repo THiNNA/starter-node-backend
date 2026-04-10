@@ -1,5 +1,6 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { env } from '../config';
+import { appConfigService, CONFIG_KEYS } from '../modules/app-config';
 
 export interface TokenPayload {
   userId: string;
@@ -8,15 +9,17 @@ export interface TokenPayload {
 }
 
 export function generateAccessToken(payload: TokenPayload): string {
-  return jwt.sign(payload, env.jwt.accessSecret, {
-    expiresIn: env.jwt.accessExpiresIn,
-  });
+  const options: SignOptions = {
+    expiresIn: appConfigService.getString(CONFIG_KEYS.JWT_ACCESS_EXPIRES_IN) as SignOptions['expiresIn'],
+  };
+  return jwt.sign(payload, env.jwt.accessSecret, options);
 }
 
 export function generateRefreshToken(payload: TokenPayload): string {
-  return jwt.sign(payload, env.jwt.refreshSecret, {
-    expiresIn: env.jwt.refreshExpiresIn,
-  });
+  const options: SignOptions = {
+    expiresIn: appConfigService.getString(CONFIG_KEYS.JWT_REFRESH_EXPIRES_IN) as SignOptions['expiresIn'],
+  };
+  return jwt.sign(payload, env.jwt.refreshSecret, options);
 }
 
 export function verifyAccessToken(token: string): TokenPayload {

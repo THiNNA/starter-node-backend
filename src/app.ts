@@ -9,37 +9,40 @@ import {
   requestLogger,
   errorHandler,
   notFoundHandler,
-  rateLimiter,
 } from './middlewares';
 import router from './routes';
+import { appConfigService, CONFIG_KEYS } from './modules/app-config';
 
-const app: Application = express();
+export function createApp(): Application {
+  const app: Application = express();
 
-// Security middlewares
-app.use(helmet());
-app.use(
-  cors({
-    origin: env.cors.origin === '*' ? true : env.cors.origin.split(','),
-    credentials: true,
-  }),
-);
-app.use(rateLimiter);
+  const bodyMaxSize = appConfigService.getString(CONFIG_KEYS.BODY_MAX_SIZE);
 
-// Body parsing with size limits
-app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+  // Security middlewares
+  app.use(helmet());
+  app.use(
+    cors({
+      origin: env.cors.origin === '*' ? true : env.cors.origin.split(','),
+      credentials: true,
+    }),
+  );
 
-// Request ID & logging
-app.use(requestIdMiddleware);
-app.use(requestLogger);
+  // Body parsing with size limits from DB config
+  app.use(express.json({ limit: bodyMaxSize }));
+  app.use(express.urlencoded({ extended: true, limit: bodyMaxSize }));
 
-// API routes
-app.use(API_PREFIX, router);
+  // Request ID & logging
+  app.use(requestIdMiddleware);
+  app.use(requestLogger);
 
-// 404 handler
-app.use(notFoundHandler);
+  // API routes
+  app.use(API_PREFIX, router);
 
-// Error handler
-app.use(errorHandler);
+  // 404 handler
+  app.use(notFoundHandler);
 
-export default app;
+  // Error handler
+  app.use(errorHandler);
+
+  return app;
+}

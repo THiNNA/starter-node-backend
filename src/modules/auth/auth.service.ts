@@ -10,6 +10,7 @@ import {
 import { UserRepository } from '../user/user.repository';
 import { AuthRepository } from './auth.repository';
 import { RegisterInput, LoginInput, AuthTokens } from './auth.types';
+import { appConfigService, CONFIG_KEYS } from '../app-config';
 
 export class AuthService {
   constructor(
@@ -110,8 +111,9 @@ export class AuthService {
   }
 
   private async storeRefreshToken(token: string, userId: string): Promise<void> {
+    const refreshTokenDays = appConfigService.getNumber(CONFIG_KEYS.REFRESH_TOKEN_DAYS);
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
+    expiresAt.setDate(expiresAt.getDate() + refreshTokenDays);
 
     await this.authRepository.createRefreshToken({
       token,

@@ -104,6 +104,12 @@ src/
 │   └── notFound.middleware.ts      # 404 handler
 │
 ├── modules/
+│   ├── app-config/
+│   │   ├── index.ts                # Re-exports config service & keys
+│   │   ├── app-config.service.ts   # Config CRUD, cache, seed defaults
+│   │   ├── app-config.repository.ts # Config data access (AppConfig table)
+│   │   └── app-config.types.ts     # Config keys, types, defaults
+│   │
 │   ├── auth/
 │   │   ├── index.ts                # Re-exports auth router
 │   │   ├── auth.controller.ts      # HTTP handlers (register, login, refresh, logout)
@@ -266,24 +272,107 @@ A user can have multiple active refresh tokens (e.g., logged in on multiple devi
 
 ---
 
+## Database-Driven Configuration
+
+All runtime configuration values are stored in the `app_configs` table and loaded into an in-memory cache at startup. This allows changing system behavior (e.g., rate limits, token expiry, salt rounds) without redeploying — just update the DB row and restart (or call reload).
+
+### How It Works
+
+```
+Server Start
+    │
+    ▼
+┌──────────────────────┐
+│ 1. Seed defaults     │  Insert default config rows if not already present
+│    (appConfigService │
+│     .seedDefaults()) │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ 2. Load all configs  │  Read all rows into in-memory Map<key, value>
+│    (appConfigService │
+│     .loadAll())      │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ 3. Reinitialize      │  Recreate rate limiters, etc. with loaded values
+│    middlewares        │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ 4. Create Express    │  App uses cached config for body size, etc.
+│    app & listen      │
+└──────────────────────┘
+```
+
+### Config Keys
+
+| Key                          | Default    | Description                             |
+|------------------------------|------------|-----------------------------------------|
+| `jwt.accessExpiresIn`        | `15m`      | JWT access token expiration             |
+| `jwt.refreshExpiresIn`       | `7d`       | JWT refresh token expiration            |
+| `auth.refreshTokenDays`      | `7`        | Refresh token DB storage duration (days)|
+| `rateLimit.windowMs`         | `900000`   | Global rate limit window (ms)           |
+| `rateLimit.max`              | `100`      | Max requests per global window          |
+| `rateLimit.auth.windowMs`    | `900000`   | Auth rate limit window (ms)             |
+| `rateLimit.auth.max`         | `20`       | Max auth requests per window            |
+| `security.bcryptSaltRounds`  | `12`       | bcrypt salt rounds for password hashing |
+| `security.bodyMaxSize`       | `10kb`     | Max request body size                   |
+| `server.cleanupIntervalMs`   | `3600000`  | Token cleanup interval (ms, default 1h) |
+| `server.shutdownTimeoutMs`   | `10000`    | Graceful shutdown timeout (ms)          |
+
+### Updating Config at Runtime
+
+Update a value directly in the database:
+
+```sql
+UPDATE app_configs SET value = '30m' WHERE `key` = 'jwt.accessExpiresIn';
+```
+
+Or via the `AppConfigService`:
+
+```typescript
+await appConfigService.set('jwt.accessExpiresIn', '30m');
+```
+
+Some changes (e.g., rate limits) require calling `appConfigService.reload()` and `refreshRateLimiters()` to take effect without restart.
+
+### Database Schema
+
+```prisma
+model AppConfig {
+  key         String   @id @db.VarChar(100)
+  value       String   @db.VarChar(500)
+  description String?  @db.VarChar(255)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("app_configs")
+}
+```
+
+---
+
 ## Security Measures
 
-| Feature             | Implementation                               |
-|---------------------|----------------------------------------------|
-| Password Hashing    | bcrypt with 12 salt rounds                   |
-| JWT Access Tokens   | 15-minute expiry, signed with access secret  |
-| JWT Refresh Tokens  | 7-day expiry, signed with refresh secret     |
-| Token Rotation      | Old refresh token deleted on each refresh    |
-| Reuse Detection     | All user tokens revoked if reuse detected    |
-| Token Cleanup       | Expired tokens cleaned up every hour         |
-| Rate Limiting       | 100 req/15min global, 20 req/15min for auth  |
-| Security Headers    | Helmet middleware                             |
-| CORS                | Configurable origins via CORS_ORIGIN env var |
-| Body Size Limit     | 10KB max request body                        |
-| Input Validation    | Zod schemas on all endpoints                 |
-| Request Tracing     | UUID-based X-Request-Id header               |
-| Env Validation      | Required secrets enforced in production       |
-| Graceful Shutdown   | SIGTERM/SIGINT handlers with 10s timeout     |
+| Feature             | Implementation                                        |
+|---------------------|-------------------------------------------------------|
+| Password Hashing    | bcrypt (salt rounds from DB config, default 12)       |
+| JWT Access Tokens   | Expiry from DB config (default 15m), signed with secret |
+| JWT Refresh Tokens  | Expiry from DB config (default 7d), signed with secret  |
+| Token Rotation      | Old refresh token deleted on each refresh             |
+| Reuse Detection     | All user tokens revoked if reuse detected             |
+| Token Cleanup       | Interval from DB config (default 1h)                  |
+| Rate Limiting       | Limits from DB config (default 100/15min, 20/15min auth) |
+| Security Headers    | Helmet middleware                                     |
+| CORS                | Configurable origins via CORS_ORIGIN env var          |
+| Body Size Limit     | Max size from DB config (default 10KB)                |
+| Input Validation    | Zod schemas on all endpoints                          |
+| Request Tracing     | UUID-based X-Request-Id header                        |
+| Env Validation      | Required secrets enforced in production               |
+| Graceful Shutdown   | Timeout from DB config (default 10s)                  |
 
 ---
 
@@ -298,12 +387,15 @@ A user can have multiple active refresh tokens (e.g., logged in on multiple devi
 
 | Event                | Level | Details                              |
 |----------------------|-------|--------------------------------------|
+| Config Seeded        | info  | Each new config key seeded           |
+| Config Loaded        | info  | Number of configs loaded from DB     |
 | HTTP Request/Response| info  | Method, URL, status code, duration   |
 | 4xx Client Errors    | warn  | Full error with requestId            |
 | 5xx Server Errors    | error | Full error with stack trace          |
 | Prisma Queries       | debug | Query text, duration                 |
 | Prisma Errors        | error | Error message, target                |
 | Token Cleanup        | info  | Number of tokens cleaned             |
+| Config Updated       | info  | Key and new value                    |
 | Server Start         | info  | Port, environment                    |
 | Graceful Shutdown    | info  | Signal received, connection status   |
 | Unhandled Rejection  | error | Reason                               |
