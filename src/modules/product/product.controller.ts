@@ -9,7 +9,7 @@ const productService = new ProductService(new ProductRepository());
 export const createProduct = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const authReq = req as AuthenticatedRequest;
   const product = await productService.create(req.body, authReq.user!.userId);
-  sendSuccess(res, product, 'Product created', 201);
+  sendSuccess(res, product, 201);
 });
 
 export const getProducts = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -28,10 +28,10 @@ export const getProductById = asyncHandler(async (req: Request, res: Response): 
 export const updateProduct = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const authReq = req as AuthenticatedRequest;
   const product = await productService.update(req.params.id, req.body, authReq.user!.userId);
-  sendSuccess(res, product, 'Product updated');
+  sendSuccess(res, product);
 });
 
 export const deleteProduct = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   await productService.delete(req.params.id);
-  sendSuccess(res, null, 'Product deleted');
+  sendSuccess(res, null);
 });

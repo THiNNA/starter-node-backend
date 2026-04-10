@@ -8,20 +8,20 @@ const authService = new AuthService(new AuthRepository(), new UserRepository());
 
 export const register = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const tokens = await authService.register(req.body);
-  sendSuccess(res, tokens, 'Registration successful', 201);
+  sendSuccess(res, tokens, 201);
 });
 
 export const login = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const tokens = await authService.login(req.body);
-  sendSuccess(res, tokens, 'Login successful');
+  sendSuccess(res, tokens);
 });
 
 export const refresh = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const tokens = await authService.refresh(req.body.refreshToken);
-  sendSuccess(res, tokens, 'Token refreshed');
+  sendSuccess(res, tokens);
 });
 
 export const logout = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   await authService.logout(req.body.refreshToken);
-  sendSuccess(res, null, 'Logout successful');
+  sendSuccess(res, null);
 });

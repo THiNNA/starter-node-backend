@@ -12,12 +12,9 @@ router.use((req, res, next) => rateLimiter(req, res, next));
 // Health check
 router.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
-    success: true,
-    data: {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-    },
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
   });
 });
 

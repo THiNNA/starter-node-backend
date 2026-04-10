@@ -1,5 +1,6 @@
 export { requestIdMiddleware } from './requestId.middleware';
 export { requestLogger } from './logger.middleware';
+export { responseWrapper } from './responseWrapper.middleware';
 export { authenticate } from './auth.middleware';
 export { authorize } from './rbac.middleware';
 export { validate } from './validate.middleware';

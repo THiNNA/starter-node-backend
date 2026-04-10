@@ -7,6 +7,7 @@ import { API_PREFIX } from './constants';
 import {
   requestIdMiddleware,
   requestLogger,
+  responseWrapper,
   errorHandler,
   notFoundHandler,
 } from './middlewares';
@@ -34,6 +35,9 @@ export function createApp(): Application {
   // Request ID & logging
   app.use(requestIdMiddleware);
   app.use(requestLogger);
+
+  // Response wrapper — auto-wraps all JSON responses in { head, body } format
+  app.use(responseWrapper);
 
   // API routes
   app.use(API_PREFIX, router);

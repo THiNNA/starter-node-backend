@@ -2,35 +2,80 @@
 
 Base URL: `http://localhost:3000/api/v1`
 
-All responses follow a standard format:
+All responses follow a standard format with `head` and `body`, automatically applied by the `responseWrapper` middleware:
+
+- `model` is extracted from the API route module (e.g., `auth`, `users`, `products`)
+- `method` is extracted from the route action (e.g., `login`, `register`) or derived from the HTTP method for RESTful routes (`list`, `detail`, `create`, `update`, `delete`)
 
 ```json
 // Success
 {
-  "success": true,
-  "data": { ... },
-  "message": "Optional message"
+  "head": {
+    "model": "auth",
+    "method": "login",
+    "errorcode": "0",
+    "errorflag": "N",
+    "errordesc": ""
+  },
+  "body": { ... }
 }
 
 // Error
 {
-  "success": false,
-  "message": "Error description",
-  "errors": { ... }  // Only for validation errors
+  "head": {
+    "model": "auth",
+    "method": "login",
+    "errorcode": "401",
+    "errorflag": "Y",
+    "errordesc": "Invalid email or password"
+  },
+  "body": null
+}
+
+// Validation Error
+{
+  "head": {
+    "model": "auth",
+    "method": "register",
+    "errorcode": "400",
+    "errorflag": "Y",
+    "errordesc": "Validation failed"
+  },
+  "body": {
+    "errors": { ... }
+  }
 }
 
 // Paginated
 {
-  "success": true,
-  "data": [ ... ],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 42,
-    "totalPages": 5
+  "head": {
+    "model": "users",
+    "method": "list",
+    "errorcode": "0",
+    "errorflag": "N",
+    "errordesc": ""
+  },
+  "body": {
+    "items": [ ... ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 42,
+      "totalPages": 5
+    }
   }
 }
 ```
+
+### Response Head Fields
+
+| Field       | Type   | Description                                      |
+|-------------|--------|--------------------------------------------------|
+| model       | string | Module/model name (e.g., auth, user, product)    |
+| method      | string | Action name (e.g., login, register, getUsers)    |
+| errorcode   | string | Error code — `"0"` for success, HTTP status for errors |
+| errorflag   | string | `"N"` for success, `"Y"` for error               |
+| errordesc   | string | Empty for success, error message for errors       |
 
 ---
 
@@ -43,8 +88,14 @@ Returns server health status. Not rate-limited. Not logged.
 **Response:**
 ```json
 {
-  "success": true,
-  "data": {
+  "head": {
+    "model": "health",
+    "method": "health",
+    "errorcode": "0",
+    "errorflag": "N",
+    "errordesc": ""
+  },
+  "body": {
     "status": "ok",
     "timestamp": "2024-01-15T10:30:00.000Z",
     "uptime": 3600.5
@@ -77,12 +128,17 @@ Create a new user account and receive tokens.
 **Success Response (201):**
 ```json
 {
-  "success": true,
-  "data": {
+  "head": {
+    "model": "auth",
+    "method": "register",
+    "errorcode": "0",
+    "errorflag": "N",
+    "errordesc": ""
+  },
+  "body": {
     "accessToken": "eyJhbGciOiJIUzI1NiIs...",
     "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
-  },
-  "message": "Registration successful"
+  }
 }
 ```
 
@@ -113,12 +169,17 @@ Authenticate with email and password.
 **Success Response (200):**
 ```json
 {
-  "success": true,
-  "data": {
+  "head": {
+    "model": "auth",
+    "method": "login",
+    "errorcode": "0",
+    "errorflag": "N",
+    "errordesc": ""
+  },
+  "body": {
     "accessToken": "eyJhbGciOiJIUzI1NiIs...",
     "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
-  },
-  "message": "Login successful"
+  }
 }
 ```
 
@@ -148,12 +209,17 @@ Exchange a refresh token for a new access/refresh token pair. Implements **token
 **Success Response (200):**
 ```json
 {
-  "success": true,
-  "data": {
+  "head": {
+    "model": "auth",
+    "method": "refresh",
+    "errorcode": "0",
+    "errorflag": "N",
+    "errordesc": ""
+  },
+  "body": {
     "accessToken": "eyJhbGciOiJIUzI1NiIs...",
     "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
-  },
-  "message": "Token refreshed"
+  }
 }
 ```
 
@@ -194,9 +260,14 @@ Authorization: Bearer <accessToken>
 **Success Response (200):**
 ```json
 {
-  "success": true,
-  "data": null,
-  "message": "Logout successful"
+  "head": {
+    "model": "auth",
+    "method": "logout",
+    "errorcode": "0",
+    "errorflag": "N",
+    "errordesc": ""
+  },
+  "body": null
 }
 ```
 
@@ -230,22 +301,30 @@ Authorization: Bearer <accessToken>
 **Success Response (200):**
 ```json
 {
-  "success": true,
-  "data": [
-    {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
-      "email": "user@example.com",
-      "role": "USER",
-      "isActive": true,
-      "createdAt": "2024-01-15T10:30:00.000Z",
-      "updatedAt": "2024-01-15T10:30:00.000Z"
+  "head": {
+    "model": "users",
+    "method": "list",
+    "errorcode": "0",
+    "errorflag": "N",
+    "errordesc": ""
+  },
+  "body": {
+    "items": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "email": "user@example.com",
+        "role": "USER",
+        "isActive": true,
+        "createdAt": "2024-01-15T10:30:00.000Z",
+        "updatedAt": "2024-01-15T10:30:00.000Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 42,
+      "totalPages": 5
     }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 42,
-    "totalPages": 5
   }
 }
 ```
@@ -275,8 +354,14 @@ Authorization: Bearer <accessToken>
 **Success Response (200):**
 ```json
 {
-  "success": true,
-  "data": {
+  "head": {
+    "model": "users",
+    "method": "detail",
+    "errorcode": "0",
+    "errorflag": "N",
+    "errordesc": ""
+  },
+  "body": {
     "id": "550e8400-e29b-41d4-a716-446655440000",
     "email": "user@example.com",
     "role": "USER",
@@ -432,8 +517,14 @@ Authorization: Bearer <accessToken>
 **Success Response (201):**
 ```json
 {
-  "success": true,
-  "data": {
+  "head": {
+    "model": "products",
+    "method": "create",
+    "errorcode": "0",
+    "errorflag": "N",
+    "errordesc": ""
+  },
+  "body": {
     "id": "550e8400-e29b-41d4-a716-446655440000",
     "name": "Widget Pro",
     "description": "A premium widget",
@@ -444,8 +535,7 @@ Authorization: Bearer <accessToken>
     "updatedBy": null,
     "createdAt": "2024-01-15T10:30:00.000Z",
     "updatedAt": "2024-01-15T10:30:00.000Z"
-  },
-  "message": "Product created"
+  }
 }
 ```
 
@@ -476,26 +566,34 @@ Authorization: Bearer <accessToken>
 **Success Response (200):**
 ```json
 {
-  "success": true,
-  "data": [
-    {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
-      "name": "Widget Pro",
-      "description": "A premium widget",
-      "price": 29.99,
-      "stock": 100,
-      "isActive": true,
-      "createdBy": "user-uuid",
-      "updatedBy": null,
-      "createdAt": "2024-01-15T10:30:00.000Z",
-      "updatedAt": "2024-01-15T10:30:00.000Z"
+  "head": {
+    "model": "products",
+    "method": "list",
+    "errorcode": "0",
+    "errorflag": "N",
+    "errordesc": ""
+  },
+  "body": {
+    "items": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "name": "Widget Pro",
+        "description": "A premium widget",
+        "price": 29.99,
+        "stock": 100,
+        "isActive": true,
+        "createdBy": "user-uuid",
+        "updatedBy": null,
+        "createdAt": "2024-01-15T10:30:00.000Z",
+        "updatedAt": "2024-01-15T10:30:00.000Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 42,
+      "totalPages": 5
     }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 42,
-    "totalPages": 5
   }
 }
 ```
@@ -519,8 +617,14 @@ Authorization: Bearer <accessToken>
 **Success Response (200):**
 ```json
 {
-  "success": true,
-  "data": {
+  "head": {
+    "model": "products",
+    "method": "detail",
+    "errorcode": "0",
+    "errorflag": "N",
+    "errordesc": ""
+  },
+  "body": {
     "id": "550e8400-e29b-41d4-a716-446655440000",
     "name": "Widget Pro",
     "description": "A premium widget",
@@ -572,8 +676,14 @@ Authorization: Bearer <accessToken>
 **Success Response (200):**
 ```json
 {
-  "success": true,
-  "data": {
+  "head": {
+    "model": "products",
+    "method": "update",
+    "errorcode": "0",
+    "errorflag": "N",
+    "errordesc": ""
+  },
+  "body": {
     "id": "550e8400-e29b-41d4-a716-446655440000",
     "name": "Widget Pro v2",
     "description": "Updated description",
@@ -584,8 +694,7 @@ Authorization: Bearer <accessToken>
     "updatedBy": "updater-uuid",
     "createdAt": "2024-01-15T10:30:00.000Z",
     "updatedAt": "2024-01-16T08:00:00.000Z"
-  },
-  "message": "Product updated"
+  }
 }
 ```
 
@@ -615,9 +724,14 @@ Authorization: Bearer <accessToken>
 **Success Response (200):**
 ```json
 {
-  "success": true,
-  "data": null,
-  "message": "Product deleted"
+  "head": {
+    "model": "products",
+    "method": "delete",
+    "errorcode": "0",
+    "errorflag": "N",
+    "errordesc": ""
+  },
+  "body": null
 }
 ```
 
