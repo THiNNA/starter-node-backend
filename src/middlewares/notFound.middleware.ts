@@ -1,13 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
+import { NotFoundError } from '../core';
 
-export const notFoundMiddleware = (
-  req: Request,
-  res: Response,
-  _next: NextFunction,
-): void => {
-  res.status(404).json({
-    status: 'error',
-    statusCode: 404,
-    message: `Route ${req.originalUrl} not found`,
-  });
+export const notFoundHandler = (_req: Request, _res: Response): void => {
+  throw new NotFoundError('Route not found');
 };

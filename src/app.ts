@@ -1,28 +1,39 @@
 import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan';
 
+import { API_PREFIX } from './constants';
+import {
+  requestIdMiddleware,
+  requestLogger,
+  errorHandler,
+  notFoundHandler,
+  rateLimiter,
+} from './middlewares';
 import router from './routes';
-import { errorMiddleware } from './middlewares/error.middleware';
-import { notFoundMiddleware } from './middlewares/notFound.middleware';
 
 const app: Application = express();
 
-// Security & utility middlewares
+// Security middlewares
 app.use(helmet());
 app.use(cors());
-app.use(morgan('dev'));
+app.use(rateLimiter);
+
+// Body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
-app.use('/api', router);
+// Request ID & logging
+app.use(requestIdMiddleware);
+app.use(requestLogger);
+
+// API routes
+app.use(API_PREFIX, router);
 
 // 404 handler
-app.use(notFoundMiddleware);
+app.use(notFoundHandler);
 
 // Error handler
-app.use(errorMiddleware);
+app.use(errorHandler);
 
 export default app;
